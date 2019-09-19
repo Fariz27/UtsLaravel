@@ -16,10 +16,10 @@ class UserController extends Controller
         $akun = $request->only('username', 'pin');
         try {
             if (! $token = JWTAuth::attempt($akun)) {
-                return response()->json(['error' => 'akun_salah'], 400);
+                return response()->json(['error' => 'token_error'], 400);
             }
         } catch (JWTException $e) {
-            return response()->json(['error' => 'tidak_dapat_membuat_token'], 500);
+            return response()->json(['error' => 'System error'], 500);
         }
         return response()->json(compact('token'));
     }
@@ -40,6 +40,9 @@ class UserController extends Controller
             'jmlSaldo' => 0,
         ]);
         $token = JWTAuth::fromUser($user);
+        $uuser = User::where('username',$request->get('username'))->first();
+        $uuser->remember_token = $token;
+        $uuser->save();
         return response()->json(compact('user','token'));
     }
 }
