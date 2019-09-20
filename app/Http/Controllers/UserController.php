@@ -1,25 +1,22 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
-
 class UserController extends Controller
 {
     public function login(Request $request)
     {
-        $akun = $request->only('username', 'pin');
+        $credentials = $request->only('username', 'password');
         try {
-            if (! $token = JWTAuth::attempt($akun)) {
-                return response()->json(['error' => 'token_error'], 400);
+            if (! $token = JWTAuth::attempt($credentials)) {
+                return response()->json(['error' => 'invalid_credentials'], 400);
             }
         } catch (JWTException $e) {
-            return response()->json(['error' => 'System error'], 500);
+            return response()->json(['error' => 'could_not_create_token'], 500);
         }
         return response()->json(compact('token'));
     }
@@ -28,21 +25,51 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users',
-            'pin' => 'required|min:6|confirmed',
+            'password' => 'required|string|min:6|confirmed',
         ]);
         if($validator->fails()){
             return response()->json($validator->errors()->toJson(), 400);
         }
         $user = User::create([
-            'name' => $request->get('name'),
+            'name' => $request->name,
             'username' => $request->get('username'),
-            'pin' => Hash::make($request->get('pin')),
-            'jmlSaldo' => 0,
+            'password' => Hash::make($request->get('password')),
         ]);
         $token = JWTAuth::fromUser($user);
-        $uuser = User::where('username',$request->get('username'))->first();
-        $uuser->remember_token = $token;
-        $uuser->save();
-        return response()->json(compact('user','token'));
+        return response()->json(compact('user','token'),201);
+    }
+    public function getAuthenticatedUser()
+    {
+        try {
+            if (! $user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['user_not_found'], 404);
+            }
+        } catch (Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+            return response()->json(['token_expired'], $e->getStatusCode());
+        } catch (Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+            return response()->json(['token_invalid'], $e->getStatusCode());
+        } catch (Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return response()->json(['token_absent'], $e->getStatusCode());
+        }
+        return response()->json(compact('user'));
+    }
+    public function saldo(Request $request){
+        try {
+            if (! $akun = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['user_not_found'], 404);
+            }
+        } catch (Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+            return response()->json(['token_expired'], $e->getStatusCode());
+        } catch (Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+            return response()->json(['token_invalid'], $e->getStatusCode());
+        } catch (Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return response()->json(['token_absent'], $e->getStatusCode());
+        }
+        $id = $akun['id'];
+        $edit = User::where('id',$id)->first();
+        $edit->saldo = $request->input('saldo');
+        $edit->save();
+        $pesan = "berhasil input saldo";
+        return response()->json(compact('edit','pesan'));
     }
 }

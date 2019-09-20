@@ -16,8 +16,9 @@ use Illuminate\Http\Request;
 Route::post('register', 'UserController@register');
 Route::post('login', 'UserController@login');
 Route::middleware(['jwt.verify'])->group(function(){
-    Route::get('tes', 'UserController@tes');
-    Route::get('transaksi','TransaksiController@index');
+    Route::post('saldo', 'UserController@saldo');
+    Route::get('transaksi', 'TransaksiController@index');
+    Route::post('transaksi','TransaksiController@store');
 });
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {

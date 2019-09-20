@@ -17,7 +17,7 @@ class Transaksi extends Migration
             $table->bigIncrements('id');
             $table->string('username');
             $table->string('jenis');
-            $table->string('namatransaksi');
+            $table->string('nama_transaksi');
             $table->integer('jumlah');
             $table->timestamps();
         });

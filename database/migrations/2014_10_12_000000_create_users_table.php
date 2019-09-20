@@ -17,8 +17,8 @@ class CreateUsersTable extends Migration
             $table->bigIncrements('id');
             $table->string('name');
             $table->string('username')->unique();
-            $table->integer('pin');
-            $table->integer('jmlSaldo');
+            $table->string('password');
+            $table->integer('saldo');
             $table->rememberToken();
             $table->timestamps();
         });
